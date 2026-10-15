@@ -1,0 +1,52 @@
+import express from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import customerRoutes from "./routes/customer.routes.js";
+import productRoutes from "./routes/product.routes.js";
+import wishlistRoutes from "./routes/wishlist.routes.js";
+import cartRoutes from "./routes/cart.routes.js";
+import orderRoutes from "./routes/order.routes.js";
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+// Only our React app may make credentialed requests; reflecting any origin would let other sites read user data
+const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
+
+app.use((req, res, next) => {
+    if (allowedOrigins.includes(req.headers.origin)) {
+        res.header("Access-Control-Allow-Origin", req.headers.origin);
+    }
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+app.use(express.json());
+app.use(cookieParser());
+
+
+app.use("/customers", customerRoutes);
+app.use("/products", productRoutes);
+app.use("/wishlist", wishlistRoutes);
+app.use("/cart", cartRoutes);
+app.use("/orders", orderRoutes);
+
+mongoose
+    .connect(process.env.MONGO_URL)
+    .then(() => {
+        console.log("DB Connected");
+        app.listen(PORT, () => {
+            console.log(`Server Started at ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.log(err);
+    });
